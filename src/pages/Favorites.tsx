@@ -1,7 +1,8 @@
-"use client";
+import { useState, useEffect } from "react";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+interface FavoritesProps {
+  onLogout: () => void;
+}
 
 interface Article {
   id: number;
@@ -31,35 +32,16 @@ interface ArticleResponse {
   };
 }
 
-export default function FavoritesPage() {
+export default function Favorites({ onLogout }: FavoritesProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
-  const router = useRouter();
 
-  // 检查认证状态，如未登录则跳转到登录页
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await fetch("/api/v2/auth/status");
-        const data = await response.json();
-
-        if (data.code !== 0 || !data.data.authenticated) {
-          router.push("/");
-        } else {
-          fetchFavorites();
-        }
-      } catch (error) {
-        console.error("检查认证状态失败:", error);
-        setError("检查登录状态失败，请刷新页面");
-        setLoading(false);
-      }
-    };
-
-    checkAuthStatus();
-  }, [router]);
+    fetchFavorites();
+  }, []);
 
   // 获取收藏文章
   const fetchFavorites = async () => {
@@ -91,7 +73,7 @@ export default function FavoritesPage() {
   };
 
   useEffect(() => {
-    if (page > 1 || !loading) {
+    if (page > 1) {
       fetchFavorites();
     }
   }, [page]);
@@ -105,7 +87,7 @@ export default function FavoritesPage() {
       const data = await response.json();
 
       if (data.code === 0) {
-        router.push("/");
+        onLogout();
       }
     } catch (error) {
       console.error("退出登录失败:", error);

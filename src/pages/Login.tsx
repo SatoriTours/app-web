@@ -1,33 +1,15 @@
-"use client";
+import { useState } from "react";
 
-import React, { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/router";
+interface LoginProps {
+  onLogin: () => void;
+}
 
-export default function LoginPage() {
+export default function Login({ onLogin }: LoginProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  // 检查认证状态
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await fetch("/api/v2/auth/status");
-        const data = await response.json();
-
-        if (data.code === 0 && data.data.authenticated) {
-          router.push("/favorites");
-        }
-      } catch (error) {
-        console.error("检查认证状态失败:", error);
-      }
-    };
-
-    checkAuthStatus();
-  }, [router]);
-
-  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -44,7 +26,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.code === 0 && data.data.success) {
-        router.push("/favorites");
+        onLogin();
       } else {
         setError(data.msg || "登录失败，请检查密码");
       }
