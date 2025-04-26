@@ -1,5 +1,17 @@
 import { useState } from "react";
 import type { Route } from "../routes/types/login";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "~/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,13 +20,23 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+// 定义表单验证模式
+const formSchema = z.object({
+  password: z.string().min(1, { message: "请输入密码" }),
+});
+
 export default function Login() {
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      password: "",
+    },
+  });
+
+  const handleLogin = async (values: z.infer<typeof formSchema>) => {
     setError("");
     setLoading(true);
 
@@ -24,14 +46,14 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: values.password }),
       });
 
       const data = await response.json();
 
       if (data.code === 0) {
-        // 登录成功，重定向到首页或其他页面
-        window.location.href = "/";
+        // 登录成功，重定向到文章页面
+        window.location.href = "/articles";
       } else {
         setError(data.msg || "密码错误");
       }
@@ -51,37 +73,41 @@ export default function Login() {
           <p className="mt-2 text-gray-600 dark:text-gray-400">请输入密码继续</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="password" className="sr-only">
-              密码
-            </label>
-            <input
-              id="password"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleLogin)} className="mt-8 space-y-6">
+            <FormField
+              control={form.control}
               name="password"
-              type="password"
-              required
-              className="w-full px-4 py-2 mt-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="请输入密码"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="请输入密码"
+                      required
+                      className="w-full px-4 py-2 mt-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
+            {error && (
+              <div className="text-red-500 text-sm text-center">{error}</div>
+            )}
 
-          <div>
-            <button
+            <Button
               type="submit"
               disabled={loading}
               className="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
               {loading ? "登录中..." : "登录"}
-            </button>
-          </div>
-        </form>
+            </Button>
+          </form>
+        </Form>
       </div>
     </main>
   );
